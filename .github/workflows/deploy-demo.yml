@@ -1,0 +1,83 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: Deploy static content to Pages
+
+on:
+  push:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'helpful-information/.node-version'
+          cache-dependency-path: 'helpful-information/package-lock.json'
+          cache: 'npm'
+
+      - name: Install
+        working-directory: 'helpful-information'
+        run: 'npm ci --omit=optional --no-fund --no-audit'
+        env:
+          HUSKY: 0
+
+      - name: Build
+        working-directory: 'helpful-information'
+        run: 'npm run build:production -- --base-href=/hia-demo-site/'
+        env:
+          NG_PRODUCTION: 'true'
+          ENV_NAME: 'HIA-Demo'
+          NG_USE_SERVICE_WORKER: 'true'
+          TXT_APP_NAME: 'HIA Demo'
+          TXT_MAIN_PAGE_HEADER: 'This demo shows how you can provide Helpful Information.'
+          TXT_MAIN_PAGE_INTRO: 'Please choose a location to view the helpful information.'
+          TXT_ERROR_HEADER: 'Data Unavailable'
+          TXT_ERROR_MESSAGE: 'Reach out to us at: '
+          TXT_ERROR_CONTACT_URL: 'https://github.com/rodekruis/helpful-information'
+          TXT_ERROR_RETRY: 'Try again?'
+          REGIONS: >-
+            test
+          REGIONS_LABELS: >-
+            Test / Example
+          REGIONS_SHEET_IDS: >-
+            10SIJdAQSd6loqCyzwK409QS_01Fgp8P4aqoDO8iBvhY
+          GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
+          GOOGLE_SHEETS_API_URL: 'https://sheets.googleapis.com/v4/spreadsheets'
+
+      - name: Add robots.txt
+        working-directory: 'helpful-information'
+        run: 'cp src/robots.private.txt www/robots.txt'
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v2
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: 'helpful-information/www'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
