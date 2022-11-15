@@ -50,6 +50,8 @@ jobs:
           NG_PRODUCTION: 'true'
           ENV_NAME: 'HIA-Demo'
           NG_USE_SERVICE_WORKER: 'true'
+          NG_USE_Q_AND_AS: 'true'
+          NG_USE_Q_AND_A_SEARCH: 'true'
           TXT_APP_NAME: 'HIA Demo'
           TXT_MAIN_PAGE_HEADER: 'This demo shows how you can provide Helpful Information.'
           TXT_MAIN_PAGE_INTRO: 'Please choose a location to view the helpful information.'
